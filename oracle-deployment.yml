@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oracle-db-deployment
+spec: 
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oracle-db
+  template:
+    metadata:
+      labels:
+        app: oracle-db
+    spec:
+      containers:
+        - name: oracle-db-container
+          image: container-registry.oracle.com/database/enterprise:latest
+      imagePullSecrets:
+        - name: oracle-registry-secret
