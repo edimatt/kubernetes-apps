@@ -61,3 +61,59 @@ Version 21.3.0.0.0
 
 SQL>
 ```
+
+Now, let's create a new user (private key and certificate signing request):
+
+```
+openssl genrsa -out username.key 2048
+openssl req -new -key username.key -out username.csr -subj "/CN=edimatt"
+```
+
+Let's now sign the request with cluster's CA
+
+```
+openssl x509 -req -in edimatt.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out edimatt.crt -days 365
+```
+
+Let's create a Role and bind it to the user:
+
+```
+kubectl create -f oracle-list-role.yml
+kubectl create -f oracle-binding-role.yml
+```
+
+Finally, let's configure the ~/.kube/config file by adding one context:
+
+```
+- context:
+    cluster: kubernetes
+    user: edimatt
+    namespace: oracle
+  name: edimatt@kubernetes
+```
+
+and the user:
+
+```
+users:
+- name: edimatt
+  user:
+    client-certificate-data: <certificate>
+    client-key-data: <key>
+```
+
+Where certificate and key will be the respectively the strings:
+
+```
+cat edimatt.crt | base64 -w 0
+cat edimatt.key | base64 -w 0
+```
+
+Verify everything is ok:
+
+```
+kubectl auth can-i list pods --as edimatt -n oracle
+yes
+kubectl config use-context <name>
+kubectl get pods
+```
